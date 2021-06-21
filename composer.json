@@ -1,6 +1,7 @@
 {
   "name": "rlzdesenv/pix",
   "description": "PIX",
+  "license": "BSD-3-Clause",
   "type": "library",
   "require": {
     "php": ">=7.0",
