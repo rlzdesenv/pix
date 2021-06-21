@@ -1,0 +1,28 @@
+{
+  "name": "rlzdesenv/pix",
+  "description": "PIX",
+  "type": "library",
+  "require": {
+    "php": ">=7.0",
+    "ext-apcu": "*",
+    "ext-soap": "*",
+    "ext-simplexml": "*",
+    "psr/log": "^1.0",
+    "guzzlehttp/guzzle": "^6.3",
+    "meng-tian/async-soap-guzzle": "^0.2.4",
+    "cache/apcu-adapter": "^1.0"
+  },
+  "authors": [
+    {
+      "name": "RLZ Informática LTDA",
+      "email": "desenvolvimento@rlz.com.br"
+    }
+  ],
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "autoload": {
+    "psr-4": {
+      "Pix\\": "src"
+    }
+  }
+}
