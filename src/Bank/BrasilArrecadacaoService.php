@@ -1,8 +1,6 @@
 <?php
 
-
 namespace Pix\Bank;
-
 
 use Pix\Exception\InvalidArgumentException;
 use Cache\Adapter\Apcu\ApcuCachePool;
@@ -154,16 +152,53 @@ class BrasilArrecadacaoService implements InterfacePIX
         try {
             $token = $this->getToken();
             $body = new \stdClass();
-            $body->numeroConvenio = $this->getNumeroConvenio();
-            $body->indicadorCodigoBarras = $this->getIndicadorCodigoBarras();
-            $body->codigoGuiaRecebimento= $this->getCodigoGuiaRecebimento();
-            $body->emailDevedor = $this->getEmailDevedor();
-            $body->codigoSolicitacaoBancoCentralBrasil = $this->getCodigoSolicitacaoBancoCentralBrasil();
+
+            if ($this->getNumeroConvenio()) {
+                $body->numeroConvenio = $this->getNumeroConvenio();
+            } else {
+                throw new \Exception('Número do Convênio não informado.');
+            }
+
+            if ($this->getIndicadorCodigoBarras()) {
+                $body->indicadorCodigoBarras = $this->getIndicadorCodigoBarras();
+            } else {
+                throw new \Exception('Indicador de Código de Barras não informado.');
+            }
+
+            if ($this->getCodigoGuiaRecebimento()) {
+                $body->indicadorCodigoBarras = $this->getCodigoGuiaRecebimento();
+            } else {
+                throw new \Exception('Código de Guia de Recebimento não informado.');
+            }
+
+            if ($this->getEmailDevedor()) {
+                $body->emailDevedor = $this->getEmailDevedor();
+            }
+
+            if ($this->getCodigoSolicitacaoBancoCentralBrasil()) {
+                $body->codigoSolicitacaoBancoCentralBrasil = $this->getCodigoSolicitacaoBancoCentralBrasil();
+            } else {
+                throw new \Exception('Chave PIX do Recebedor não informado.');
+            }
+
             $body->descricaoSolicitacaoPagamento = $this->getDescricaoSolicitacaoPagamento();
-            $body->valorOriginalSolicitacao = $this->getValorOriginalSolicitacao();
-            $body->cpfDevedor = $this->getCpfDevedor();
+
+            if ($this->getValorOriginalSolicitacao() && $this->getValorOriginalSolicitacao() > 0) {
+                $body->valorOriginalSolicitacao = $this->getValorOriginalSolicitacao();
+            } else {
+                throw new \Exception('Valor não pode ser zerado!!!');
+            }
+
+            if ($this->getCpfDevedor()) {
+                $body->cpfDevedor = $this->getCpfDevedor();
+            } elseif ($this->getCnpjDevedor()){
+                $body->cnpjDevedor = $this->getCnpjDevedor();
+            } else {
+                throw new \Exception('CPF ou CNPJ não informado.');
+            }
+
             $body->nomeDevedor = $this->getNomeDevedor();
-            $body->quantidadeSegundoExpiracao= $this->getQuantidadeSegundoExpiracao();
+            $body->quantidadeSegundoExpiracao= $this->getQuantidadeSegundoExpiracao() ?: 3600;
             $this->setVariables();
 
             $res = $this->client->request('POST', $this->base_uri.'/arrecadacao-qrcodes', [
