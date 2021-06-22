@@ -166,7 +166,7 @@ class BrasilArrecadacaoService implements InterfacePIX
             }
 
             if ($this->getCodigoGuiaRecebimento()) {
-                $body->indicadorCodigoBarras = $this->getCodigoGuiaRecebimento();
+                $body->codigoGuiaRecebimento = $this->getCodigoGuiaRecebimento();
             } else {
                 throw new \Exception('Código de Guia de Recebimento não informado.');
             }
