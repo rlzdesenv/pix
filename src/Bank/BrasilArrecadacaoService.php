@@ -2,6 +2,7 @@
 
 namespace Pix\Bank;
 
+use DateTime;
 use Pix\Exception\InvalidArgumentException;
 use Cache\Adapter\Apcu\ApcuCachePool;
 use GuzzleHttp\Client;
@@ -22,7 +23,7 @@ class BrasilArrecadacaoService implements InterfacePIX
     private $cpfDevedor;
     private $cnpjDevedor;
     private $nomeDevedor;
-    private $quantidadeSegundoExpiracao;
+    private $vencimento;
     private $listaInformacaoAdicional;
     private $clientId;
     private $clientSecret;
@@ -57,7 +58,7 @@ class BrasilArrecadacaoService implements InterfacePIX
      * @param string $cpfDevedor
      * @param string $cnpjDevedor
      * @param string $nomeDevedor
-     * @param int $quantidadeSegundoExpiracao
+     * @param DateTime $vencimento
      * @param $listaInformacaoAdicional
      * @param string $clientId
      * @param string $clientSecret
@@ -67,7 +68,7 @@ class BrasilArrecadacaoService implements InterfacePIX
                                 string $emailDevedor = null, int $codigoPaisTelefoneDevedor = null, int $dddTelefoneDevedor = null,
                                 string $numeroTelefoneDevedor = null, string $codigoSolicitacaoBancoCentralBrasil = null,
                                 string $descricaoSolicitacaoPagamento = null, $valorOriginalSolicitacao = null, string $cpfDevedor = null,
-                                string $cnpjDevedor = null, string $nomeDevedor = null, int $quantidadeSegundoExpiracao = null,
+                                string $cnpjDevedor = null, string $nomeDevedor = null, int $vencimento = null,
                                 $listaInformacaoAdicional = null, string $clientId = null, string $clientSecret = null, bool $sandbox = false)
     {
         $this->cache = new ApcuCachePool();
@@ -84,7 +85,7 @@ class BrasilArrecadacaoService implements InterfacePIX
         $this->cpfDevedor = $cpfDevedor;
         $this->cnpjDevedor = $cnpjDevedor;
         $this->nomeDevedor = $nomeDevedor;
-        $this->quantidadeSegundoExpiracao = $quantidadeSegundoExpiracao;
+        $this->vencimento = $vencimento;
         $this->listaInformacaoAdicional = $listaInformacaoAdicional;
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
@@ -198,9 +199,14 @@ class BrasilArrecadacaoService implements InterfacePIX
             }
 
             $body->nomeDevedor = $this->getNomeDevedor();
-            $body->quantidadeSegundoExpiracao= $this->getQuantidadeSegundoExpiracao() ?: 3600;
+
+            $this->vencimento->setTime(23, 55, 00);
+            $expiracao = $this->vencimento->getTimestamp() - (new DateTime())->getTimestamp();
+
+            $body->quantidadeSegundoExpiracao = $expiracao ?: 600;
             $this->setVariables();
 
+            //Requisição HTTPS
             $res = $this->client->request('POST', $this->base_uri.'/arrecadacao-qrcodes', [
                 'headers' => ['Authorization' => 'Bearer '.$token],
                 'query' => [$this->base_type_gw => $this->base_gw_key],
@@ -481,24 +487,6 @@ class BrasilArrecadacaoService implements InterfacePIX
     /**
      * @return mixed
      */
-    public function getQuantidadeSegundoExpiracao()
-    {
-        return $this->quantidadeSegundoExpiracao;
-    }
-
-    /**
-     * @param mixed $quantidadeSegundoExpiracao
-     * @return BrasilArrecadacaoService
-     */
-    public function setQuantidadeSegundoExpiracao($quantidadeSegundoExpiracao): BrasilArrecadacaoService
-    {
-        $this->quantidadeSegundoExpiracao = $quantidadeSegundoExpiracao;
-        return $this;
-    }
-
-    /**
-     * @return mixed
-     */
     public function getListaInformacaoAdicional()
     {
         return $this->listaInformacaoAdicional;
@@ -585,5 +573,24 @@ class BrasilArrecadacaoService implements InterfacePIX
         $this->qrCode = $qrCode;
         return $this;
     }
+
+    /**
+     * @return mixed
+     */
+    public function getVencimento()
+    {
+        return $this->vencimento;
+    }
+
+    /**
+     * @param mixed $vencimento
+     * @return BrasilArrecadacaoService
+     */
+    public function setVencimento(DateTime $vencimento)
+    {
+        $this->vencimento = $vencimento;
+        return $this;
+    }
+
 
 }
