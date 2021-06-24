@@ -191,9 +191,9 @@ class BrasilArrecadacaoService implements InterfacePIX
             }
 
             if ($this->getCpfDevedor()) {
-                $body->cpfDevedor = $this->getCpfDevedor();
+                $body->cpfDevedor = (float)$this->getCpfDevedor();
             } elseif ($this->getCnpjDevedor()){
-                $body->cnpjDevedor = $this->getCnpjDevedor();
+                $body->cnpjDevedor = (float)$this->getCnpjDevedor();
             } else {
                 throw new \Exception('CPF ou CNPJ não informado.');
             }
