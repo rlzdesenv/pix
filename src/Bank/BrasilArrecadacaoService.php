@@ -221,8 +221,8 @@ class BrasilArrecadacaoService implements InterfacePIX
         } catch (RequestException $e) {
             if($e->hasResponse()) {
                 $error = json_decode($e->getResponse()->getBody()->getContents());
-                $exception = new InvalidArgumentException($error->codigo, $error->mensagem);
-                throw new \Exception($error->mensagem, 406, $exception);
+                $exception = new InvalidArgumentException($error->erros[0]->codigo, $error->erros[0]->mensagem);
+                throw new \Exception($error->erros[0]->mensagem, 406, $exception);
             } else {
                 throw new \Exception($e->getMessage(), $e->getCode());
             }
