@@ -108,14 +108,6 @@ class BrasilArrecadacaoService implements InterfacePIX
             $this->base_gw_key = 'd27bd77908ffab901368e17de0050656b9d1a5bf';
             $this->setClientId('eyJpZCI6Ijk1OGQwZjQtOSIsImNvZGlnb1B1YmxpY2Fkb3IiOjAsImNvZGlnb1NvZnR3YXJlIjoxNTkzNSwic2VxdWVuY2lhbEluc3RhbGFjYW8iOjF9');
             $this->setClientSecret('eyJpZCI6IiIsImNvZGlnb1B1YmxpY2Fkb3IiOjAsImNvZGlnb1NvZnR3YXJlIjoxNTkzNSwic2VxdWVuY2lhbEluc3RhbGFjYW8iOjEsInNlcXVlbmNpYWxDcmVkZW5jaWFsIjoxLCJhbWJpZW50ZSI6ImhvbW9sb2dhY2FvIiwiaWF0IjoxNjIxMDIwNTUxMDE1fQ');
-            $this->setCodigoSolicitacaoBancoCentralBrasil('e2572aa4-52d6-4527-bc69-60c0699ea50d');
-            if ($this->getCpfDevedor()) {
-                $this->setCpfDevedor('72335607065');
-                $this->setNomeDevedor('HELIO FERREIRA PEIXOTO');
-            } else {
-                $this->setCnpjDevedor('97167096000119');
-                $this->setNomeDevedor('DOCERIA DO LAGO CACIQUE');
-            };
         } else {
             $this->base_uri = '???'; //Produção
             $this->base_uri_token = '???';
@@ -215,6 +207,17 @@ class BrasilArrecadacaoService implements InterfacePIX
 
             $body->quantidadeSegundoExpiracao = $expiracao ?: 600;
             $this->setVariables();
+
+            if ($this->isSandbox()) {
+                $body->codigoSolicitacaoBancoCentralBrasil = 'e2572aa4-52d6-4527-bc69-60c0699ea50d';
+                if ($this->getCpfDevedor()) {
+                    $body->cpfDevedor = '72335607065';
+                    $body->nomeDevedor = 'HELIO FERREIRA PEIXOTO';
+                } else {
+                    $body->cnpjDevedor = '97167096000119';
+                    $body->nomeDevedor = 'DOCERIA DO LAGO CACIQUE';
+                };
+            }
 
             //Requisição HTTPS
             $res = $this->client->request('POST', $this->base_uri.'/arrecadacao-qrcodes', [
