@@ -105,9 +105,9 @@ class BrasilArrecadacaoService implements InterfacePIX
             $this->base_uri = 'https://api.sandbox.bb.com.br/pix-bb/v1';
             $this->base_uri_token = 'https://oauth.sandbox.bb.com.br/oauth/token';
             $this->base_type_gw = 'gw-dev-app-key';
-            $this->base_gw_key = 'd27bd77908ffab901368e17de0050656b9d1a5bf';
-            $this->setClientId('eyJpZCI6Ijk1OGQwZjQtOSIsImNvZGlnb1B1YmxpY2Fkb3IiOjAsImNvZGlnb1NvZnR3YXJlIjoxNTkzNSwic2VxdWVuY2lhbEluc3RhbGFjYW8iOjF9');
-            $this->setClientSecret('eyJpZCI6IiIsImNvZGlnb1B1YmxpY2Fkb3IiOjAsImNvZGlnb1NvZnR3YXJlIjoxNTkzNSwic2VxdWVuY2lhbEluc3RhbGFjYW8iOjEsInNlcXVlbmNpYWxDcmVkZW5jaWFsIjoxLCJhbWJpZW50ZSI6ImhvbW9sb2dhY2FvIiwiaWF0IjoxNjIxMDIwNTUxMDE1fQ');
+            $this->base_gw_key = 'd27bf7790dffabf0136fe17df0050256b981a5be';
+            $this->setClientId('eyJpZCI6IjY4MGJiZmItMzRiZS00Yzc2LWIiLCJjb2RpZ29QdWJsaWNhZG9yIjowLCJjb2RpZ29Tb2Z0d2FyZSI6MjEyNDgsInNlcXVlbmNpYWxJbnN0YWxhY2FvIjoxfQ');
+            $this->setClientSecret('eyJpZCI6Ijk2YjY0MGMtNDMzZC00ODVkLThkNzUtNDJlYjEiLCJjb2RpZ29QdWJsaWNhZG9yIjowLCJjb2RpZ29Tb2Z0d2FyZSI6MjEyNDgsInNlcXVlbmNpYWxJbnN0YWxhY2FvIjoxLCJzZXF1ZW5jaWFsQ3JlZGVuY2lhbCI6MSwiYW1iaWVudGUiOiJob21vbG9nYWNhbyIsImlhdCI6MTYyOTgxMjIxOTIyNH0');
         } else {
             $this->base_uri = '???'; //Produção
             $this->base_uri_token = '???';
