@@ -25,6 +25,7 @@ class BrasilArrecadacaoService implements InterfacePIX
     private $nomeDevedor;
     private $vencimento;
     private $listaInformacaoAdicional;
+    private $appKey;
     private $clientId;
     private $clientSecret;
     private $sandbox;
@@ -37,11 +38,10 @@ class BrasilArrecadacaoService implements InterfacePIX
     private $cache;
 
     private $token;
-    private $client;
     private $base_uri;
     private $base_uri_token;
     private $base_type_gw;
-    private $base_gw_key;
+    private $client;
 
     /**
      * BrasilArrecadacao constructor.
@@ -60,6 +60,7 @@ class BrasilArrecadacaoService implements InterfacePIX
      * @param string $nomeDevedor
      * @param DateTime $vencimento
      * @param $listaInformacaoAdicional
+     * @param string $appKey
      * @param string $clientId
      * @param string $clientSecret
      * @param bool $sandbox
@@ -68,8 +69,9 @@ class BrasilArrecadacaoService implements InterfacePIX
                                 string $emailDevedor = null, int $codigoPaisTelefoneDevedor = null, int $dddTelefoneDevedor = null,
                                 string $numeroTelefoneDevedor = null, string $codigoSolicitacaoBancoCentralBrasil = null,
                                 string $descricaoSolicitacaoPagamento = null, $valorOriginalSolicitacao = null, string $cpfDevedor = null,
-                                string $cnpjDevedor = null, string $nomeDevedor = null, int $vencimento = null,
-                                $listaInformacaoAdicional = null, string $clientId = null, string $clientSecret = null, bool $sandbox = false)
+                                string $cnpjDevedor = null, string $nomeDevedor = null, int $vencimento = null,  $listaInformacaoAdicional = null,
+                                string $appKey = null,  string $clientId = null, string $clientSecret = null,
+                                bool $sandbox = false)
     {
         $this->cache = new ApcuCachePool();
         $this->numeroConvenio = $numeroConvenio;
@@ -87,6 +89,7 @@ class BrasilArrecadacaoService implements InterfacePIX
         $this->nomeDevedor = $nomeDevedor;
         $this->vencimento = $vencimento;
         $this->listaInformacaoAdicional = $listaInformacaoAdicional;
+        $this->appKey = $appKey;
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
         $this->sandbox = $sandbox;
@@ -105,14 +108,10 @@ class BrasilArrecadacaoService implements InterfacePIX
             $this->base_uri = 'https://api.sandbox.bb.com.br/pix-bb/v1';
             $this->base_uri_token = 'https://oauth.sandbox.bb.com.br/oauth/token';
             $this->base_type_gw = 'gw-dev-app-key';
-            $this->base_gw_key = 'd27bf7790dffabf0136fe17df0050256b981a5be';
-            $this->setClientId('eyJpZCI6IjY4MGJiZmItMzRiZS00Yzc2LWIiLCJjb2RpZ29QdWJsaWNhZG9yIjowLCJjb2RpZ29Tb2Z0d2FyZSI6MjEyNDgsInNlcXVlbmNpYWxJbnN0YWxhY2FvIjoxfQ');
-            $this->setClientSecret('eyJpZCI6Ijk2YjY0MGMtNDMzZC00ODVkLThkNzUtNDJlYjEiLCJjb2RpZ29QdWJsaWNhZG9yIjowLCJjb2RpZ29Tb2Z0d2FyZSI6MjEyNDgsInNlcXVlbmNpYWxJbnN0YWxhY2FvIjoxLCJzZXF1ZW5jaWFsQ3JlZGVuY2lhbCI6MSwiYW1iaWVudGUiOiJob21vbG9nYWNhbyIsImlhdCI6MTYyOTgxMjIxOTIyNH0');
         } else {
             $this->base_uri = '???'; //Produção
             $this->base_uri_token = '???';
             $this->base_type_gw = 'gw-app-key';
-            $this->base_gw_key = '???';
         }
     }
 
@@ -222,7 +221,7 @@ class BrasilArrecadacaoService implements InterfacePIX
             //Requisição HTTPS
             $res = $this->client->request('POST', $this->base_uri.'/arrecadacao-qrcodes', [
                 'headers' => ['Authorization' => 'Bearer '.$token],
-                'query' => [$this->base_type_gw => $this->base_gw_key],
+                'query' => [$this->base_type_gw => $this->getAppKey()],
                 'json' => $body
             ]);
 
@@ -512,6 +511,24 @@ class BrasilArrecadacaoService implements InterfacePIX
     public function setListaInformacaoAdicional($listaInformacaoAdicional): BrasilArrecadacaoService
     {
         $this->listaInformacaoAdicional = $listaInformacaoAdicional;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getAppKey()
+    {
+        return $this->appKey;
+    }
+
+    /**
+     * @param mixed $appKey
+     * @return BrasilArrecadacaoService
+     */
+    public function setAppKey($appKey): BrasilArrecadacaoService
+    {
+        $this->appKey = $appKey;
         return $this;
     }
 
