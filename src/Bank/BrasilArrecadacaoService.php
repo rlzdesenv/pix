@@ -17,7 +17,7 @@ class BrasilArrecadacaoService implements InterfacePIX
     private $codigoPaisTelefoneDevedor;
     private $dddTelefoneDevedor;
     private $numeroTelefoneDevedor;
-    private $codigoSolicitacaoBancoCentralBrasil;
+    private $chavePIX;
     private $descricaoSolicitacaoPagamento;
     private $valorOriginalSolicitacao;
     private $cpfDevedor;
@@ -25,10 +25,12 @@ class BrasilArrecadacaoService implements InterfacePIX
     private $nomeDevedor;
     private $vencimento;
     private $listaInformacaoAdicional;
+    private $baseURIToken;
+    private $baseURI;
+    private $baseType;
     private $appKey;
     private $clientId;
     private $clientSecret;
-    private $sandbox;
     private $transactionId;
     private $qrCode;
 
@@ -38,9 +40,6 @@ class BrasilArrecadacaoService implements InterfacePIX
     private $cache;
 
     private $token;
-    private $base_uri;
-    private $base_uri_token;
-    private $base_type_gw;
     private $client;
 
     /**
@@ -52,7 +51,7 @@ class BrasilArrecadacaoService implements InterfacePIX
      * @param int $codigoPaisTelefoneDevedor
      * @param int $dddTelefoneDevedor
      * @param string $numeroTelefoneDevedor
-     * @param string $codigoSolicitacaoBancoCentralBrasil
+     * @param string $chavePIX
      * @param string $descricaoSolicitacaoPagamento
      * @param numeric $valorOriginalSolicitacao
      * @param string $cpfDevedor
@@ -60,18 +59,20 @@ class BrasilArrecadacaoService implements InterfacePIX
      * @param string $nomeDevedor
      * @param DateTime $vencimento
      * @param $listaInformacaoAdicional
+     * @param string $baseURIToken
+     * @param string $baseURI
+     * @param string $baseType
      * @param string $appKey
      * @param string $clientId
      * @param string $clientSecret
-     * @param bool $sandbox
      */
     public function __construct(int $numeroConvenio = null, string $indicadorCodigoBarras = null, string $codigoGuiaRecebimento = null,
                                 string $emailDevedor = null, int $codigoPaisTelefoneDevedor = null, int $dddTelefoneDevedor = null,
-                                string $numeroTelefoneDevedor = null, string $codigoSolicitacaoBancoCentralBrasil = null,
+                                string $numeroTelefoneDevedor = null, string $chavePIX = null,
                                 string $descricaoSolicitacaoPagamento = null, $valorOriginalSolicitacao = null, string $cpfDevedor = null,
                                 string $cnpjDevedor = null, string $nomeDevedor = null, int $vencimento = null,  $listaInformacaoAdicional = null,
-                                string $appKey = null,  string $clientId = null, string $clientSecret = null,
-                                bool $sandbox = false)
+                                string $baseURIToken = null, string $baseURI = null, string $baseType = null,
+                                string $appKey = null,  string $clientId = null, string $clientSecret = null)
     {
         $this->cache = new ApcuCachePool();
         $this->numeroConvenio = $numeroConvenio;
@@ -81,7 +82,7 @@ class BrasilArrecadacaoService implements InterfacePIX
         $this->codigoPaisTelefoneDevedor = $codigoPaisTelefoneDevedor;
         $this->dddTelefoneDevedor = $dddTelefoneDevedor;
         $this->numeroTelefoneDevedor = $numeroTelefoneDevedor;
-        $this->codigoSolicitacaoBancoCentralBrasil = $codigoSolicitacaoBancoCentralBrasil;
+        $this->chavePIX = $chavePIX;
         $this->descricaoSolicitacaoPagamento = $descricaoSolicitacaoPagamento;
         $this->valorOriginalSolicitacao = $valorOriginalSolicitacao;
         $this->cpfDevedor = $cpfDevedor;
@@ -89,10 +90,12 @@ class BrasilArrecadacaoService implements InterfacePIX
         $this->nomeDevedor = $nomeDevedor;
         $this->vencimento = $vencimento;
         $this->listaInformacaoAdicional = $listaInformacaoAdicional;
+        $this->baseURIToken = $baseURIToken;
+        $this->baseURI = $baseURI;
+        $this->baseType = $baseType;
         $this->appKey = $appKey;
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
-        $this->sandbox = $sandbox;
 
         $this->client = new Client([
             'headers' => [
@@ -103,27 +106,14 @@ class BrasilArrecadacaoService implements InterfacePIX
         ]);
     }
 
-    private function setVariables() {
-        if ($this->isSandbox()) {
-            $this->base_uri = 'https://api.sandbox.bb.com.br/pix-bb/v1';
-            $this->base_uri_token = 'https://oauth.sandbox.bb.com.br/oauth/token';
-            $this->base_type_gw = 'gw-dev-app-key';
-        } else {
-            $this->base_uri = '???'; //Produção
-            $this->base_uri_token = '???';
-            $this->base_type_gw = 'gw-app-key';
-        }
-    }
-
     private function getToken()
     {
         try {
-            $key = sha1('pix-bb-arrecadacao' . $this->getNumeroConvenio());
+            $key = sha1('pix-bb-arrecadacao' . $this->numeroConvenio);
             $item = $this->cache->getItem($key);
             if (!$item->isHit()) {
-                $this->setVariables();
-                $postToken = new Client(['auth' => [$this->getClientId(), $this->getClientSecret()]]);
-                $response = $postToken->request('POST', $this->base_uri_token, [
+                $postToken = new Client(['auth' => [$this->clientId, $this->clientSecret]]);
+                $response = $postToken->request('POST', $this->baseURIToken, [
                     'headers' => [
                         'Content-Type' => 'application/x-www-form-urlencoded',
                         'Cache-Control' => 'no-cache'
@@ -145,7 +135,7 @@ class BrasilArrecadacaoService implements InterfacePIX
         } catch (RequestException $e) {
             echo $e->getMessage() . PHP_EOL;
         } catch (\Exception $e) {
-            echo $e->getMessage() . PHP_EOL;;
+            echo $e->getMessage() . PHP_EOL;
         }
     }
 
@@ -155,73 +145,61 @@ class BrasilArrecadacaoService implements InterfacePIX
             $token = $this->getToken();
             $body = new \stdClass();
 
-            if ($this->getNumeroConvenio()) {
-                $body->numeroConvenio = $this->getNumeroConvenio();
+            if ($this->numeroConvenio) {
+                $body->numeroConvenio = $this->numeroConvenio;
             } else {
                 throw new \Exception('Número do Convênio não informado.');
             }
 
-            if ($this->getIndicadorCodigoBarras()) {
-                $body->indicadorCodigoBarras = $this->getIndicadorCodigoBarras();
+            if ($this->indicadorCodigoBarras) {
+                $body->indicadorCodigoBarras = $this->indicadorCodigoBarras;
             } else {
                 throw new \Exception('Indicador de Código de Barras não informado.');
             }
 
-            if ($this->getCodigoGuiaRecebimento()) {
-                $body->codigoGuiaRecebimento = $this->getCodigoGuiaRecebimento();
+            if ($this->codigoGuiaRecebimento) {
+                $body->codigoGuiaRecebimento = $this->codigoGuiaRecebimento;
             } else {
                 throw new \Exception('Código de Guia de Recebimento não informado.');
             }
 
-            if ($this->getEmailDevedor()) {
-                $body->emailDevedor = $this->getEmailDevedor();
-            }
-
-            if ($this->getCodigoSolicitacaoBancoCentralBrasil()) {
-                $body->codigoSolicitacaoBancoCentralBrasil = $this->getCodigoSolicitacaoBancoCentralBrasil();
+            if ($this->chavePIX) {
+                $body->codigoSolicitacaoBancoCentralBrasil = $this->chavePIX;
             } else {
                 throw new \Exception('Chave PIX do Recebedor não informado.');
             }
 
-            $body->descricaoSolicitacaoPagamento = $this->getDescricaoSolicitacaoPagamento();
+            if ($this->emailDevedor) {
+                $body->emailDevedor = $this->emailDevedor;
+            }
 
-            if ($this->getValorOriginalSolicitacao() && $this->getValorOriginalSolicitacao() > 0) {
-                $body->valorOriginalSolicitacao = $this->getValorOriginalSolicitacao();
+            $body->descricaoSolicitacaoPagamento = $this->descricaoSolicitacaoPagamento;
+
+            if ($this->valorOriginalSolicitacao && $this->valorOriginalSolicitacao > 0) {
+                $body->valorOriginalSolicitacao = $this->valorOriginalSolicitacao;
             } else {
                 throw new \Exception('Valor não pode ser zerado!!!');
             }
 
-            if ($this->getCpfDevedor()) {
-                $body->cpfDevedor = (float)$this->getCpfDevedor();
-            } elseif ($this->getCnpjDevedor()){
-                $body->cnpjDevedor = (float)$this->getCnpjDevedor();
+            if ($this->cpfDevedor) {
+                $body->cpfDevedor = $this->cpfDevedor;
+            } elseif ($this->cnpjDevedor){
+                $body->cnpjDevedor = $this->cnpjDevedor;
             } else {
                 throw new \Exception('CPF ou CNPJ não informado.');
             }
 
-            $body->nomeDevedor = $this->getNomeDevedor();
+            $body->nomeDevedor = $this->nomeDevedor;
 
             $this->vencimento->setTime(23, 55, 00);
             $expiracao = $this->vencimento->getTimestamp() - (new DateTime())->getTimestamp();
 
             $body->quantidadeSegundoExpiracao = $expiracao ?: 600;
-            $this->setVariables();
-
-            if ($this->isSandbox()) {
-                $body->codigoSolicitacaoBancoCentralBrasil = 'e2572aa4-52d6-4527-bc69-60c0699ea50d';
-                if ($this->getCpfDevedor()) {
-                    $body->cpfDevedor = '72335607065';
-                    $body->nomeDevedor = 'HELIO FERREIRA PEIXOTO';
-                } else {
-                    $body->cnpjDevedor = '97167096000119';
-                    $body->nomeDevedor = 'DOCERIA DO LAGO CACIQUE';
-                };
-            }
-
+            
             //Requisição HTTPS
-            $res = $this->client->request('POST', $this->base_uri.'/arrecadacao-qrcodes', [
+            $res = $this->client->request('POST', $this->baseURI.'/arrecadacao-qrcodes', [
                 'headers' => ['Authorization' => 'Bearer '.$token],
-                'query' => [$this->base_type_gw => $this->getAppKey()],
+                'query' => [$this->baseType => $this->appKey],
                 'json' => $body
             ]);
 
@@ -243,384 +221,152 @@ class BrasilArrecadacaoService implements InterfacePIX
         }
     }
 
-
-    /**
-     * @return bool
-     */
-    public function isSandbox(): bool
+    public function setbaseURIToken(string $baseURIToken): BrasilArrecadacaoService
     {
-        return $this->sandbox;
-    }
-
-    /**
-     * @param bool $sandbox
-     * @return BrasilArrecadacaoService
-     */
-    public function setSandbox(bool $sandbox): BrasilArrecadacaoService
-    {
-        $this->sandbox = $sandbox;
+        $this->baseURIToken = $baseURIToken;
         return $this;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getNumeroConvenio()
+    public function setbaseURI(string $baseURI): BrasilArrecadacaoService
     {
-        return $this->numeroConvenio;
+        $this->baseURI = $baseURI;
+        return $this;
     }
 
-    /**
-     * @param mixed $numeroConvenio
-     * @return BrasilArrecadacaoService
-     */
-    public function setNumeroConvenio($numeroConvenio): BrasilArrecadacaoService
+    public function setbaseType(string $baseType): BrasilArrecadacaoService
+    {
+        $this->baseType = $baseType;
+        return $this;
+    }
+
+    public function setNumeroConvenio(int $numeroConvenio): BrasilArrecadacaoService
     {
         $this->numeroConvenio = $numeroConvenio;
         return $this;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getIndicadorCodigoBarras()
-    {
-        return $this->indicadorCodigoBarras;
-    }
-
-    /**
-     * @param mixed $indicadorCodigoBarras
-     * @return BrasilArrecadacaoService
-     */
-    public function setIndicadorCodigoBarras($indicadorCodigoBarras): BrasilArrecadacaoService
+    public function setIndicadorCodigoBarras(string $indicadorCodigoBarras): BrasilArrecadacaoService
     {
         $this->indicadorCodigoBarras = $indicadorCodigoBarras;
         return $this;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getCodigoGuiaRecebimento()
-    {
-        return $this->codigoGuiaRecebimento;
-    }
-
-    /**
-     * @param mixed $codigoGuiaRecebimento
-     * @return BrasilArrecadacaoService
-     */
-    public function setCodigoGuiaRecebimento($codigoGuiaRecebimento): BrasilArrecadacaoService
+    public function setCodigoGuiaRecebimento(string $codigoGuiaRecebimento): BrasilArrecadacaoService
     {
         $this->codigoGuiaRecebimento = $codigoGuiaRecebimento;
         return $this;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getEmailDevedor()
-    {
-        return $this->emailDevedor;
-    }
-
-    /**
-     * @param mixed $emailDevedor
-     * @return BrasilArrecadacaoService
-     */
-    public function setEmailDevedor($emailDevedor): BrasilArrecadacaoService
+    public function setEmailDevedor(string $emailDevedor): BrasilArrecadacaoService
     {
         $this->emailDevedor = $emailDevedor;
         return $this;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getCodigoPaisTelefoneDevedor()
-    {
-        return $this->codigoPaisTelefoneDevedor;
-    }
-
-    /**
-     * @param mixed $codigoPaisTelefoneDevedor
-     * @return BrasilArrecadacaoService
-     */
-    public function setCodigoPaisTelefoneDevedor($codigoPaisTelefoneDevedor): BrasilArrecadacaoService
+    public function setCodigoPaisTelefoneDevedor(int $codigoPaisTelefoneDevedor): BrasilArrecadacaoService
     {
         $this->codigoPaisTelefoneDevedor = $codigoPaisTelefoneDevedor;
         return $this;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getDddTelefoneDevedor()
-    {
-        return $this->dddTelefoneDevedor;
-    }
-
-    /**
-     * @param mixed $dddTelefoneDevedor
-     * @return BrasilArrecadacaoService
-     */
-    public function setDddTelefoneDevedor($dddTelefoneDevedor): BrasilArrecadacaoService
+    public function setDddTelefoneDevedor(int $dddTelefoneDevedor): BrasilArrecadacaoService
     {
         $this->dddTelefoneDevedor = $dddTelefoneDevedor;
         return $this;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getNumeroTelefoneDevedor()
-    {
-        return $this->numeroTelefoneDevedor;
-    }
-
-    /**
-     * @param mixed $numeroTelefoneDevedor
-     * @return BrasilArrecadacaoService
-     */
-    public function setNumeroTelefoneDevedor($numeroTelefoneDevedor): BrasilArrecadacaoService
+    public function setNumeroTelefoneDevedor(string $numeroTelefoneDevedor): BrasilArrecadacaoService
     {
         $this->numeroTelefoneDevedor = $numeroTelefoneDevedor;
         return $this;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getCodigoSolicitacaoBancoCentralBrasil()
+    public function setChavePIX(string $chavePIX): BrasilArrecadacaoService
     {
-        return $this->codigoSolicitacaoBancoCentralBrasil;
-    }
-
-    /**
-     * @param mixed $codigoSolicitacaoBancoCentralBrasil
-     * @return BrasilArrecadacaoService
-     */
-    public function setCodigoSolicitacaoBancoCentralBrasil($codigoSolicitacaoBancoCentralBrasil): BrasilArrecadacaoService
-    {
-        $this->codigoSolicitacaoBancoCentralBrasil = $codigoSolicitacaoBancoCentralBrasil;
+        $this->chavePIX = $chavePIX;
         return $this;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getDescricaoSolicitacaoPagamento()
-    {
-        return $this->descricaoSolicitacaoPagamento;
-    }
-
-    /**
-     * @param mixed $descricaoSolicitacaoPagamento
-     * @return BrasilArrecadacaoService
-     */
-    public function setDescricaoSolicitacaoPagamento($descricaoSolicitacaoPagamento): BrasilArrecadacaoService
+    public function setDescricaoSolicitacaoPagamento(string $descricaoSolicitacaoPagamento): BrasilArrecadacaoService
     {
         $this->descricaoSolicitacaoPagamento = $descricaoSolicitacaoPagamento;
         return $this;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getValorOriginalSolicitacao()
-    {
-        return $this->valorOriginalSolicitacao;
-    }
-
-    /**
-     * @param mixed $valorOriginalSolicitacao
-     * @return BrasilArrecadacaoService
-     */
     public function setValorOriginalSolicitacao($valorOriginalSolicitacao): BrasilArrecadacaoService
     {
         $this->valorOriginalSolicitacao = $valorOriginalSolicitacao;
         return $this;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getCpfDevedor()
-    {
-        return $this->cpfDevedor;
-    }
-
-    /**
-     * @param mixed $cpfDevedor
-     * @return BrasilArrecadacaoService
-     */
-    public function setCpfDevedor($cpfDevedor): BrasilArrecadacaoService
-    {
-        $this->cpfDevedor = $cpfDevedor;
-        return $this;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getCnpjDevedor()
-    {
-        return $this->cnpjDevedor;
-    }
-
-    /**
-     * @param mixed $cnpjDevedor
-     * @return BrasilArrecadacaoService
-     */
-    public function setCnpjDevedor($cnpjDevedor): BrasilArrecadacaoService
-    {
-        $this->cnpjDevedor = $cnpjDevedor;
-        return $this;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getNomeDevedor()
-    {
-        return $this->nomeDevedor;
-    }
-
-    /**
-     * @param mixed $nomeDevedor
-     * @return BrasilArrecadacaoService
-     */
-    public function setNomeDevedor($nomeDevedor): BrasilArrecadacaoService
+    public function setNomeDevedor(string $nomeDevedor): BrasilArrecadacaoService
     {
         $this->nomeDevedor = $nomeDevedor;
         return $this;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getListaInformacaoAdicional()
-    {
-        return $this->listaInformacaoAdicional;
-    }
-
-    /**
-     * @param mixed $listaInformacaoAdicional
-     * @return BrasilArrecadacaoService
-     */
     public function setListaInformacaoAdicional($listaInformacaoAdicional): BrasilArrecadacaoService
     {
         $this->listaInformacaoAdicional = $listaInformacaoAdicional;
         return $this;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getAppKey()
-    {
-        return $this->appKey;
-    }
-
-    /**
-     * @param mixed $appKey
-     * @return BrasilArrecadacaoService
-     */
-    public function setAppKey($appKey): BrasilArrecadacaoService
+    public function setAppKey(string $appKey): BrasilArrecadacaoService
     {
         $this->appKey = $appKey;
         return $this;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getClientId()
-    {
-        return $this->clientId;
-    }
-
-    /**
-     * @param mixed $clientId
-     * @return BrasilArrecadacaoService
-     */
-    public function setClientId($clientId): BrasilArrecadacaoService
+    public function setClientId(string $clientId): BrasilArrecadacaoService
     {
         $this->clientId = $clientId;
         return $this;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getClientSecret()
-    {
-        return $this->clientSecret;
-    }
-
-    /**
-     * @param mixed $clientSecret
-     * @return BrasilArrecadacaoService
-     */
-    public function setClientSecret($clientSecret): BrasilArrecadacaoService
+    public function setClientSecret(string $clientSecret): BrasilArrecadacaoService
     {
         $this->clientSecret = $clientSecret;
         return $this;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getTransactionId()
-    {
-        return $this->transactionId;
-    }
-
-    /**
-     * @param mixed $transactionId
-     * @return BrasilArrecadacaoService
-     */
-    public function setTransactionId($transactionId)
+    public function setTransactionId(string $transactionId)
     {
         $this->transactionId = $transactionId;
         return $this;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getQrCode()
-    {
-        return $this->qrCode;
-    }
-
-    /**
-     * @param mixed $qrCode
-     * @return BrasilArrecadacaoService
-     */
-    public function setQrCode($qrCode): BrasilArrecadacaoService
+    public function setQrCode(string $qrCode): BrasilArrecadacaoService
     {
         $this->qrCode = $qrCode;
         return $this;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getVencimento()
-    {
-        return $this->vencimento;
-    }
-
-    /**
-     * @param mixed $vencimento
-     * @return BrasilArrecadacaoService
-     */
     public function setVencimento(DateTime $vencimento)
     {
         $this->vencimento = $vencimento;
         return $this;
     }
+
+    public function setDocumento(string $tipopessoa, $documento)
+    {
+        if ($tipopessoa === 'Jurídica') {
+            $this->cnpjDevedor = (string)(float)$documento;
+        } else {
+            $this->cpfDevedor = (string)(float)$documento;
+        }
+        return $this;
+    }
+
+    public function getTransactionId()
+    {
+        return $this->transactionId;
+    }
+
+    public function getQrCode()
+    {
+        return $this->qrCode;
+    }
+
 
 
 }
