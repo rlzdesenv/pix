@@ -27,7 +27,6 @@ class BrasilArrecadacaoService implements InterfacePIX
     private $listaInformacaoAdicional;
     private $baseURIToken;
     private $baseURI;
-    private $baseType;
     private $appKey;
     private $clientId;
     private $clientSecret;
@@ -61,7 +60,6 @@ class BrasilArrecadacaoService implements InterfacePIX
      * @param $listaInformacaoAdicional
      * @param string $baseURIToken
      * @param string $baseURI
-     * @param string $baseType
      * @param string $appKey
      * @param string $clientId
      * @param string $clientSecret
@@ -71,8 +69,8 @@ class BrasilArrecadacaoService implements InterfacePIX
                                 string $numeroTelefoneDevedor = null, string $chavePIX = null,
                                 string $descricaoSolicitacaoPagamento = null, $valorOriginalSolicitacao = null, string $cpfDevedor = null,
                                 string $cnpjDevedor = null, string $nomeDevedor = null, int $vencimento = null,  $listaInformacaoAdicional = null,
-                                string $baseURIToken = null, string $baseURI = null, string $baseType = null,
-                                string $appKey = null,  string $clientId = null, string $clientSecret = null)
+                                string $baseURIToken = null, string $baseURI = null, string $appKey = null,  string $clientId = null,
+                                string $clientSecret = null)
     {
         $this->cache = new ApcuCachePool();
         $this->numeroConvenio = $numeroConvenio;
@@ -92,7 +90,6 @@ class BrasilArrecadacaoService implements InterfacePIX
         $this->listaInformacaoAdicional = $listaInformacaoAdicional;
         $this->baseURIToken = $baseURIToken;
         $this->baseURI = $baseURI;
-        $this->baseType = $baseType;
         $this->appKey = $appKey;
         $this->clientId = $clientId;
         $this->clientSecret = $clientSecret;
@@ -122,14 +119,13 @@ class BrasilArrecadacaoService implements InterfacePIX
                     'verify' => false
                 ]);
 
-                if ($response->getStatusCode() === 201) {
-                    $result = json_decode($response->getBody()->getContents());
+                $result = json_decode($response->getBody()->getContents());
 
-                    $item->set($result->access_token);
-                    $item->expiresAfter($result->expires_in);
-                    $this->cache->saveDeferred($item);
-                    return $item->get();
-                }
+                $item->set($result->access_token);
+                $item->expiresAfter($result->expires_in);
+                $this->cache->saveDeferred($item);
+                return $item->get();
+
             }
             return $item->get();
         } catch (RequestException $e) {
@@ -199,15 +195,14 @@ class BrasilArrecadacaoService implements InterfacePIX
             //Requisição HTTPS
             $res = $this->client->request('POST', $this->baseURI.'/arrecadacao-qrcodes', [
                 'headers' => ['Authorization' => 'Bearer '.$token],
-                'query' => [$this->baseType => $this->appKey],
+                'query' => ['gw-dev-app-key' => $this->appKey],
                 'json' => $body
             ]);
 
-            if ($res->getStatusCode() === 200) {
-                $retorno = json_decode($res->getBody()->getContents());
-                $this->setTransactionId($retorno->codigoConciliacaoSolicitante);
-                $this->setQrCode($retorno->qrCode);
-            }
+            $retorno = json_decode($res->getBody()->getContents());
+            $this->setTransactionId($retorno->codigoConciliacaoSolicitante);
+            $this->setQrCode($retorno->qrCode);
+
         } catch (RequestException $e) {
             if($e->hasResponse()) {
                 $error = json_decode($e->getResponse()->getBody()->getContents());
@@ -230,12 +225,6 @@ class BrasilArrecadacaoService implements InterfacePIX
     public function setbaseURI(string $baseURI): BrasilArrecadacaoService
     {
         $this->baseURI = $baseURI;
-        return $this;
-    }
-
-    public function setbaseType(string $baseType): BrasilArrecadacaoService
-    {
-        $this->baseType = $baseType;
         return $this;
     }
 
