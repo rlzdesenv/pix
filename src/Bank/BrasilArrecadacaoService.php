@@ -339,9 +339,9 @@ class BrasilArrecadacaoService implements InterfacePIX
     public function setDocumento(string $tipopessoa, $documento)
     {
         if ($tipopessoa === 'Jurídica') {
-            $this->cnpjDevedor = (string)(float)$documento;
+            $this->cnpjDevedor = (string)$documento;
         } else {
-            $this->cpfDevedor = (string)(float)$documento;
+            $this->cpfDevedor = (string)$documento;
         }
         return $this;
     }
